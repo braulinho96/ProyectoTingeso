@@ -3,8 +3,10 @@ package com.example.demo.services;
 import com.example.demo.entities.LoanEntity;
 import com.example.demo.repositories.LoanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import java.util.ArrayList;
+
+import java.util.List;
 
 @Service
 public class LoanService {
@@ -12,9 +14,9 @@ public class LoanService {
     LoanRepository loanRepository;
 
     // Getters of loans
-    public ArrayList<LoanEntity> getLoans(){ return (ArrayList<LoanEntity>) loanRepository.findAll();}
+    public List<LoanEntity> getLoans(){ return (List<LoanEntity>) loanRepository.findAll();}
     public LoanEntity getLoanById(Long id){ return loanRepository.findById(id).get();}
-    public LoanEntity getLoanByRut(String rut){ return loanRepository.findByRut(rut);}
+    public List<LoanEntity> getLoanByRut(String rut){ return loanRepository.findByRut(rut);}
 
     // Creation
     public LoanEntity postLoanSolicitude(LoanEntity loanSolicitude){return loanRepository.save(loanSolicitude);}
@@ -30,36 +32,61 @@ public class LoanService {
         return (int) Math.ceil(monthlyPayment);
     }
 
+    // P4. For the solicitude revision
+    public List<LoanEntity> getPendingLoans(){
+        return loanRepository.findBySolicitudeStateNot("Approved");
+    }
 
     // R1.
-    public boolean R1cuoteIncomeRelation (LoanEntity loanSolicitude, int cuote, int income){
-        if (income == 0) {
-            throw new IllegalArgumentException("Income cannot be zero");
-        }
-        // We convert cuote to float so we can get the decimals of the division
-        float relation =  (float) cuote / income;
-        if(relation <= 0.35){
-            // Update the solicitude and save it
-            loanSolicitude.setSolicitude_state("R2");
-            loanRepository.save(loanSolicitude);
-            return true;
-        } else {
+    public boolean R1cuoteIncomeRelation(int quota, int income) {
+        // Verify the values of the quota and income
+        if (quota <= 0 || income <= 0) {
             return false;
         }
-
+        // Convertimos quota a float para obtener los decimales de la división
+        float relation = (float) quota / income;
+        return relation <= 0.35;
     }
 
-    // R2.
-    public boolean creditHistory(LoanEntity loanSolicitude, boolean severeDelinquency, boolean manyDebts){
-        if (!severeDelinquency && !manyDebts){
-            // Update the solicitude and save it
-            loanSolicitude.setSolicitude_state("R3");
-            loanRepository.save(loanSolicitude);
-            return true;
+    // R3
+    public boolean R3evaluateEmploymentStability(int yearsOfEmployment, boolean isSelfEmployed) {
+        if (isSelfEmployed) {
+            return yearsOfEmployment >= 2; // Case of being self-employed
         } else {
-            return false;
+            return yearsOfEmployment >= 1; // Case of being employed
         }
     }
+    // R4
+    public boolean R4ratioDebsIncome(int totalDebts, int monthlyIncome) {
+        float ratio = (float) totalDebts / monthlyIncome;
+        return !(ratio > 0.5);
+    }
+
+    public boolean R5maxAmount(int loanAmount, int propertyValue, int propertyType) {
+        double maxAllowedLoan;
+        switch (propertyType) {
+            case 1:  // Primera Vivienda
+                maxAllowedLoan = propertyValue * 0.8;
+                break;
+            case 2:  // Segunda Vivienda
+                maxAllowedLoan = propertyValue * 0.7;
+                break;
+            case 3:  // Propiedades Comerciales
+                maxAllowedLoan = propertyValue * 0.6;
+                break;
+            case 4:  // Remodelación
+                maxAllowedLoan = propertyValue * 0.5;
+                break;
+            default:  // Tipo de propiedad no válido
+                throw new IllegalArgumentException("Tipo de propiedad inválido");
+        }
+        return loanAmount <= maxAllowedLoan;
+    }
+
+    public boolean R6ageLimit(int age, int term) {
+        return (term + age) <=  70;
+    }
+
 
 
 }

@@ -2,6 +2,7 @@ package com.example.demo.services;
 
 import com.example.demo.entities.UserEntity;
 import com.example.demo.repositories.UserRepository;
+import com.sun.tools.jconsole.JConsoleContext;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -37,6 +38,15 @@ public class UserService {
             throw new Exception(e.getMessage());
         }
     }
+
+    public UserEntity validateUserLogin(String rut, String password) {
+        UserEntity user = getUserByRut(rut);
+        if (user != null && user.isSolicitude_state() && password.equals(user.getPassword())) {
+            return user; // Retorna el objeto si las credenciales son correctas
+        }
+        return null; // Retorna null si no son válidas
+    }
+
 
 
 }

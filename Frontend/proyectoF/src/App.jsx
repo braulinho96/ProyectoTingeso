@@ -1,76 +1,76 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-
 import Navbar from './components/Navbar';
 import Login from './components/Login';
 import Register from './components/Register';
 import Home from './components/Home';
 import LoanSimulation from './components/LoanSimulation';
 import LoanSolicitude from './components/LoanSolicitude';
+import LoanEvaluation from './components/LoanEvaluation';
 import NotFound from './components/NotFound';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Controla autenticación
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
 
-  // Funciones de login y logout
-  const handleLogin = () => setIsAuthenticated(true);
-  const handleLogout = () => setIsAuthenticated(false);
+  useEffect(() => {
+    const savedRut = localStorage.getItem('userRut');
+    const savedRole = localStorage.getItem('userRole');
+
+    if (savedRut && savedRole) {
+      setUser({ rut: savedRut, id_rol: savedRole });
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+    localStorage.setItem('userRut', userData.rut);
+    localStorage.setItem('userRole', userData.id_rol);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUser(null);
+    localStorage.removeItem('userRut');
+    localStorage.removeItem('userRole');
+  };
+  
 
   return (
     <Router>
       <div style={{ display: 'flex' }}>
-        {/* Navbar solo si está autenticado */}
-        {isAuthenticated && (
-          <Navbar isAuthenticated={isAuthenticated} handleLogout={handleLogout} />
+        {isAuthenticated && user && (
+          <Navbar isAuthenticated={isAuthenticated} handleLogout={handleLogout} user={user} />
         )}
 
-        {/* Contenedor principal que ajusta su margen */}
         <div style={{ marginLeft: isAuthenticated ? '200px' : '0', padding: '20px', flex: 1 }}>
           <Routes>
-            {/* Ruta principal: Redirige al home si está autenticado */}
             <Route
               path="/"
-              element={
-                isAuthenticated ? <Navigate to="/home" replace /> : <Login onLogin={handleLogin} />
-              }
+              element={isAuthenticated ? <Navigate to="/home" replace /> : <Login onLogin={handleLogin} />}
             />
-
-            {/* Ruta Home: Protegida, solo accesible si está autenticado */}
             <Route
               path="/home"
-              element={
-                isAuthenticated ? <Home /> : <Navigate to="/" replace />
-              }
+              element={isAuthenticated ? <Home user={user} /> : <Navigate to="/" replace />}
             />
-            
-            {/* Ruta Simulación de Crédito: Protegida */}
+
             <Route
               path="/loan-simulation"
-              element={
-                isAuthenticated ? <LoanSimulation /> : <Navigate to="/" replace />
-              }
+              element={isAuthenticated ? <LoanSimulation /> : <Navigate to="/" replace />}
             />
-            
-            {/* Ruta para la Solicitud de Préstamo */}
             <Route
               path="/loan-solicitude"
-              element={
-                isAuthenticated ? <LoanSolicitude /> : <Navigate to="/" replace />
-              }
+              element={isAuthenticated ? <LoanSolicitude user={user} /> : <Navigate to="/" replace />}
             />
-
             <Route
-              path="/"
-              element={
-                isAuthenticated ? <Navigate to="/home" replace /> : <Login onLogin={handleLogin} />
-              }
+              path="/loan-evaluation"
+              element={isAuthenticated && Number(user?.id_rol) === 1 ? <LoanEvaluation /> : <Navigate to="/" replace />}
             />
 
-            {/* Ruta de Registro: No requiere autenticación */}
             <Route path="/register" element={<Register />} />
-
-            {/* Ruta para manejar errores 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
@@ -80,4 +80,3 @@ function App() {
 }
 
 export default App;
-

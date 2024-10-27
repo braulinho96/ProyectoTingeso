@@ -3,81 +3,91 @@ import { useNavigate } from 'react-router-dom';
 import userService from '../services/user.service';
 
 const Register = () => {
-  const [rut, setRut] = useState('');
+  const [rut, setRut] = useState('');                   // State to hold the raw RUT input
+  const [formattedRut, setFormattedRut] = useState(''); // State to hold the formatted RUT for display
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
-  // Formateo del RUT
   const formatRut = (value) => {
-    const cleaned = value.replace(/[^\dkK]/g, '');
-    const limitedRut = cleaned.slice(0, 9); // Limita el tamaño máximo del RUT
+    // Remove all characters except numbers and 'K'
+    const cleaned = value.replace(/[^0-9kK]/g, '');
+
+    // Limit RUT to maximum length of 9 characters (8 digits + 1 verification digit)
+    const limitedRut = cleaned.slice(0, 9); 
+
+    // Get the numeric part and the verification digit
     const rutPart = limitedRut.slice(0, -1);
-    const dv = limitedRut.slice(-1);
-    return rutPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.').concat('-', dv);
+    const dv = limitedRut.slice(-1).toUpperCase(); // Get the last character as the verification digit (uppercase)
+
+    // Format the RUT as 12345678-9
+    return `${rutPart}-${dv}`.trim(); // Ensure no extra spaces
   };
 
-  // Maneja el cambio del campo RUT con formateo
+  // Handle changes in the RUT input with formatting
   const handleRutChange = (e) => {
     const value = e.target.value;
-    setRut(formatRut(value));
+    setRut(value); // Store the raw input value
+    setFormattedRut(formatRut(value)); // Update the formatted value for display
   };
 
-  // Registro del usuario
+  // User registration
   const handleRegister = async (e) => {
     e.preventDefault();
     setError(''); 
     setSuccess(''); 
 
-    const user = { rut, name, password, solicitude_state: false, id_rol: 2 };
+    const user = { rut: formattedRut, 
+      name, 
+      password, solicitude_state: false, 
+      id_rol: 2 };
 
     try {
       await userService.create(user);
-      setSuccess('Usuario registrado exitosamente.');
-      setTimeout(() => navigate('/'), 100); // Redirige tras 2 segundos
+      setSuccess('User registered successfully.');
+      setTimeout(() => navigate('/'), 200); 
 
     } catch (err) {
-      setError('The rut is already registered.');
+      setError('The RUT is already registered.');
       console.error('Error:', err);
     }
   };
 
   return (
     <div>
-      <h2>Registro de Usuario</h2>
+      <h2>User Registration</h2>
       <form onSubmit={handleRegister}>
         <input
           type="text"
-          placeholder="RUT"
-          value={rut}
+          placeholder="RUT - e.g., 12345678-9"
+          value={formattedRut} // Use the formatted RUT for display
           onChange={handleRutChange}
-          maxLength={12}
-          minLength={11}
+          maxLength={12} // Maximum characters, including the hyphen
           required
         />
         <input
           type="text"
-          placeholder="Nombre"
+          placeholder="Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
         />
         <input
           type="password"
-          placeholder="Contraseña"
+          placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
         {error && <p style={{ color: 'red' }}>{error}</p>}
         {success && <p style={{ color: 'green' }}>{success}</p>}
-        <button type="submit">Registrar</button>
+        <button type="submit">Register</button>
       </form>
       <p>
-        ¿Ya tienes una cuenta?{' '}
-        <button onClick={() => navigate('/')}>Iniciar sesión</button>
+        Already have an account?{' '}
+        <button onClick={() => navigate('/')}>Log in</button>
       </p>
     </div>
   );

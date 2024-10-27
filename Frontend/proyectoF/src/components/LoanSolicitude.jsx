@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import LoanService from '../services/loan.service'; 
 import DocumentsService from '../services/documents.service';
 
@@ -59,7 +60,7 @@ const loanOptions = [
   },
 ];
 
-const LoanSimulation = () => {
+const postLoanSolicitude = ({ user }) => {  
   const [selectedLoan, setSelectedLoan] = useState(null);
   const [propertyValue, setPropertyValue] = useState('');
   const [amount, setAmount] = useState('');
@@ -67,10 +68,12 @@ const LoanSimulation = () => {
   const [interestRate, setInterestRate] = useState('');
   const [files, setFiles] = useState({});  
 
-  const handleFileChange = (e, index) => {
+  const handleFileChange = (e, index) => { 
     const newFiles = { ...files, [index]: e.target.files[0] };
     setFiles(newFiles);
   };
+
+  const navigate = useNavigate(); // Part to navigate throght pages
 
   const uploadSolicitude = async (e) => {
     e.preventDefault();
@@ -97,14 +100,14 @@ const LoanSimulation = () => {
     }
 
     try {
-      // Create the loan application
+      // Create the loan application with the user's RUT
       const loanResponse = await LoanService.postLoanSolicitude({
         financing_amount: numericAmount,
         term: parseInt(term),
         interest_rate: parseFloat(interestRate),
         solicitude_state: 'Initial Revision',
         type: selectedLoan.typeNumber,
-        rut: "123456789",  // Replace with the user's RUT!!!!!!!!!!!!!!!!!!!!!!!!!
+        rut: user.rut,  // Asegúrate de que user tenga el RUT REVISARRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRr
       });
 
       const loanId = loanResponse.id; // Get the idLoan created to relate with the uploading documents
@@ -126,8 +129,9 @@ const LoanSimulation = () => {
           alert(`Error uploading document: ${selectedLoan.requirements[i]}`);
         }
       }
-
+      navigate('/home');
       alert('Loan application and documents uploaded successfully.');
+      
 
     } catch (error) {
       console.error('Error:', error);
@@ -232,4 +236,4 @@ const LoanSimulation = () => {
   );
 };
 
-export default LoanSimulation;
+export default postLoanSolicitude;

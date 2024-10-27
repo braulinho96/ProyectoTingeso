@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/loans")
 @CrossOrigin("*")
@@ -25,8 +27,8 @@ public class LoanController {
         return ResponseEntity.ok(loan);
     }
     @GetMapping("/rut")
-    public ResponseEntity<LoanEntity> getLoanByRut(@RequestParam String rut) {
-        LoanEntity loan = loanService.getLoanByRut(rut);
+    public ResponseEntity<List<LoanEntity>> getLoanByRut(@RequestParam String rut) {
+        List<LoanEntity> loan = loanService.getLoanByRut(rut);
         return ResponseEntity.ok(loan);
     }
 
@@ -45,15 +47,54 @@ public class LoanController {
         return loanService.calculateMonthlyLoanPayment(loanAmount, annualInterestRate, totalYears);
     }
 
-    // R1 for the loan solicitude
-    @PostMapping("/evaluate/{loanId}")
-    public ResponseEntity<String> R1evaluateCuoteIncome(@PathVariable Long loanId, @RequestParam int cuote, @RequestParam int income) {
-        LoanEntity loanSolicitude = loanService.getLoanById(loanId);
-        boolean result = loanService.R1cuoteIncomeRelation(loanSolicitude, cuote, income);
-        if (result) {
-            return ResponseEntity.ok("Cuote-Income ratio is valid. Loan status updated to R2.");
-        } else {
-            return ResponseEntity.badRequest().body("Cuote-Income ratio exceeds the limit.");
-        }
+    // P4.
+    @GetMapping("/pending")
+    public List<LoanEntity> getPendingLoans() {
+        return loanService.getPendingLoans();
     }
+
+    @PostMapping("/evaluate/R1")
+    public ResponseEntity<Boolean> R1evaluateCuoteIncome(@RequestParam int quota, @RequestParam int income) {
+        // Llamada al servicio para evaluar la relación cuota-ingreso
+        boolean result = loanService.R1cuoteIncomeRelation(quota, income);
+        // Retorna el resultado directamente como un booleano
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/evaluate/R3")
+    public ResponseEntity<Boolean> R3evaluateEmploymentStability(@RequestParam int yearsOfEmployment, @RequestParam boolean isSelfEmployed) {
+        boolean isStable = loanService.R3evaluateEmploymentStability(yearsOfEmployment, isSelfEmployed);
+        return ResponseEntity.ok(isStable);
+    }
+
+    @PostMapping("/evaluate/R4")
+    public ResponseEntity<Boolean> R4ratioDebsIncome(
+            @RequestParam int totalDebts,
+            @RequestParam int monthlyIncome) {
+        boolean isApproved = loanService.R4ratioDebsIncome(totalDebts, monthlyIncome);
+        return ResponseEntity.ok(isApproved);
+    }
+
+    @PostMapping("/evaluate/R5")
+    public ResponseEntity<Boolean> R5maxAmount(
+            @RequestParam int loanAmount,
+            @RequestParam int propertyValue,
+            @RequestParam int propertyType) {
+
+        boolean isApproved = loanService.R5maxAmount(loanAmount, propertyValue, propertyType);
+        return ResponseEntity.ok(isApproved);
+    }
+
+    @PostMapping("/evaluate/R6")
+    public ResponseEntity<Boolean> R6ageLimit(
+            @RequestParam int age,
+            @RequestParam int term) {
+
+        boolean isApproved = loanService.R6ageLimit(age, term);
+        return ResponseEntity.ok(isApproved);
+    }
+
+
+
+
 }

@@ -29,15 +29,11 @@ public class DocumentController {
 
             // new Document Entity, we set the name of
             DocumentEntity newDocument = new DocumentEntity();
-
             newDocument.setIdLoan(idLoan);
             newDocument.setName(name);                          // Saves the name of the file
             newDocument.setContent(file.getBytes());            // This converts the file to a byte array
-
             DocumentEntity saveDocument = documentService.saveDocument(newDocument);
-
             return ResponseEntity.status(HttpStatus.CREATED).body(saveDocument); // 201 to say that was created
-
 
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null); // 500 error mean Internal Server error
