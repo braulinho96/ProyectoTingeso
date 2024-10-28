@@ -41,7 +41,8 @@ const Register = () => {
 
     const user = { rut: formattedRut, 
       name, 
-      password, solicitude_state: false, 
+      password, 
+      solicitude_state: true, // Logic for the solicitude state
       id_rol: 2 };
 
     try {

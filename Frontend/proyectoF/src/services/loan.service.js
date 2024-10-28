@@ -120,7 +120,24 @@ const LoanService = {
     }
   },
 
+  evaluateR7: async (loanSolicitude, numberApproved) => {
+    try {
+      const response = await axios.post(`${API_URL}/evaluate/R7`, loanSolicitude, {
+        params: { numberApproved },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error evaluating loan R7:', error);
+      throw error;
+    }
+  },
 
-
-}; 
+  getUserLoansByRut: async (rut) => {
+    const response = await axios.get(`${API_URL}/rut`, {
+      params: { rut }, 
+    });
+    return response.data; 
+  },
+};
+  
 export default LoanService;

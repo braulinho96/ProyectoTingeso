@@ -8,6 +8,7 @@ import Home from './components/Home';
 import LoanSimulation from './components/LoanSimulation';
 import LoanSolicitude from './components/LoanSolicitude';
 import LoanEvaluation from './components/LoanEvaluation';
+import LoanSolicitudeFollowUp from './components/LoanSolicitudeFollowUp';
 import NotFound from './components/NotFound';
 
 function App() {
@@ -68,6 +69,10 @@ function App() {
             <Route
               path="/loan-evaluation"
               element={isAuthenticated && Number(user?.id_rol) === 1 ? <LoanEvaluation /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/loan-solicitude-follow-up"
+              element={isAuthenticated ? <LoanSolicitudeFollowUp user={user} /> : <Navigate to="/" replace />} 
             />
 
             <Route path="/register" element={<Register />} />

@@ -3,7 +3,6 @@ package com.example.demo.services;
 import com.example.demo.entities.LoanEntity;
 import com.example.demo.repositories.LoanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -82,9 +81,21 @@ public class LoanService {
         }
         return loanAmount <= maxAllowedLoan;
     }
-
+    // R6
     public boolean R6ageLimit(int age, int term) {
         return (term + age) <=  70;
+    }
+
+    // R7
+    public LoanEntity R7SavingCapacity(LoanEntity evaluatedLoan, int numberApproved){
+        if(numberApproved == 5) {
+            evaluatedLoan.setSolicitudeState("E4");
+        } else if(numberApproved == 3 | numberApproved == 4){
+            evaluatedLoan.setEvaluationState("R8"); // To indicate that we need an additional revision
+        } else{
+            evaluatedLoan.setSolicitudeState("E7: The applicant has not met the R7 requirement regarding Saving capacity.");
+        }
+        return loanRepository.save(evaluatedLoan);
     }
 
 

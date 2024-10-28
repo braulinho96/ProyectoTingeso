@@ -73,7 +73,7 @@ const postLoanSolicitude = ({ user }) => {
     setFiles(newFiles);
   };
 
-  const navigate = useNavigate(); // Part to navigate throght pages
+  const navigate = useNavigate(); 
 
   const uploadSolicitude = async (e) => {
     e.preventDefault();
@@ -105,7 +105,8 @@ const postLoanSolicitude = ({ user }) => {
         financing_amount: numericAmount,
         term: parseInt(term),
         interest_rate: parseFloat(interestRate),
-        solicitude_state: 'Initial Revision',
+        evaluationState: 'R1',
+        solicitudeState: 'E3',
         type: selectedLoan.typeNumber,
         rut: user.rut,  // Asegúrate de que user tenga el RUT REVISARRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRr
       });

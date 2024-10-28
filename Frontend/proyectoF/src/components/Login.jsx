@@ -31,8 +31,6 @@ const Login = ({ onLogin }) => {
   };
   
   
-  
-  
   return (
     <div className="login-page">
       <h1>Login</h1>

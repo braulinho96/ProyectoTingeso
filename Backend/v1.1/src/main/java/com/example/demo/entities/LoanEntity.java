@@ -18,7 +18,8 @@
         private String rut;
         // First home: 1  / Second home:2 / Commercial Properties: 3  / Remodeling: 4
         private int type;
-        private String solicitudeState;
+        private String evaluationState; // P4
+        private String solicitudeState; // P5
 
         private int term;
         private float interest_rate;

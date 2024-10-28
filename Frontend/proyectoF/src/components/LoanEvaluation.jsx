@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import LoanService from "../services/loan.service";
+import { Navigate } from "react-router-dom";
 
 const LoanEvaluation = () => {
   const [pendingLoans, setPendingLoans] = useState([]);
@@ -13,9 +14,8 @@ const LoanEvaluation = () => {
   const [totalDebts, setTotalDebts] = useState(0);
   const [propertyValue, setPropertyValue] = useState(0);
   const [age, setAgeValue] = useState(0);
+  const [numberAproved, setnumberAproved] = useState(0);
                     
-
-
   useEffect(() => {
     fetchPendingLoans();
   }, []);
@@ -31,6 +31,7 @@ const LoanEvaluation = () => {
 
   const handleLoanSelect = (loan) => {
     setSelectedLoan(loan);
+    console.log(loan);
   };
 
   const handleExitEvaluation = () => {
@@ -39,7 +40,12 @@ const LoanEvaluation = () => {
     setMonthlyIncome(0);
     setTotalDebts(0);
     setEvaluationResult("");
-    setIsLoanAccepted(null); 
+    setIsLoanAccepted(null);
+    setYearsOfEmployment(0);
+    setIsSelfEmployed(false);
+    setPropertyValue(0);
+    setAgeValue(0);
+    setnumberAproved(0);
   };
 
   // R1 Evaluation
@@ -54,55 +60,85 @@ const LoanEvaluation = () => {
   };
 
   const handleEvaluateR1 = async (isAccepted) => {
-    try {
-      const updatedLoan = { ...selectedLoan, solicitudeState: isAccepted ? "R2" : "E7: The applicant has not met the R1 requirement regarding debt-to-income ratio." };
-      await LoanService.updateLoan(updatedLoan);
-      setSelectedLoan(updatedLoan);
-      alert(isAccepted ? "Loan accepted: relation between quota and income is acceptable. Loan state updated to R2." : "Loan rejected: relation between quota and income is too high.");
-      fetchPendingLoans();
-    } catch (error) {
-      console.error("Error updating loan:", error);
-      alert("Error updating loan: " + error.message);
+    if(isAccepted){
+      // Case when the loan is accepted
+      try{
+        const updatedLoan = { ...selectedLoan, evaluationState: "R2" };
+        await LoanService.updateLoan(updatedLoan);
+        setSelectedLoan(updatedLoan);
+        alert("Loan accepted: relation between quota and income is acceptable. Loan state updated to R2.");
+        fetchPendingLoans();
+
+      } catch (error) {
+        console.error("Error updating loan:", error);
+        alert("Error updating loan: " + error.message);
+      }
+    } else {
+      // Case when the loan is rejected
+      try{
+        const updatedLoan = { ...selectedLoan, solicitudeState: "E7: The applicant has not met the R1 requirement regarding debt-to-income ratio." };
+        await LoanService.updateLoan(updatedLoan);
+        setSelectedLoan(updatedLoan);
+        alert("Loan rejected: relation between quota and income is too high.");
+        fetchPendingLoans();
+
+      } catch (error) {
+        console.error("Error updating loan:", error);
+        alert("Error updating loan: " + error.message);
+      }
     }
   };
   
   // R2 Evaluation
   const handleEvaluateR2 = async (isAccepted) => {
-    try {
-      const updatedLoan = { ...selectedLoan, solicitudeState: isAccepted ? "R3" : "E7: The applicant has not met the R2 requirement regarding credit history." };
-      await LoanService.updateLoan(updatedLoan);
-      setSelectedLoan(updatedLoan);
-      alert(isAccepted ? "Loan accepted and updated to R3." : "Loan rejected.");
+    if(isAccepted){
+      try{
+        const updatedLoan = { ...selectedLoan, evaluationState: "R3"};
+        await LoanService.updateLoan(updatedLoan);
+        setSelectedLoan(updatedLoan);
+        alert("Loan accepted and updated to R3.");
+      }catch (error){
+        console.error('Error evaluating R2:', error);
+        setEvaluationResult('Error during evaluation.');
+      }
       fetchPendingLoans();
-    } catch (error) {
-      console.error("Error updating loan:", error);
-      alert("Error updating loan: " + error.message);
+    } else{
+      try{
+        const updatedLoan = { ...selectedLoan, solicitudeState: "E7: The applicant has not met the R2 requirement regarding credit history." };
+        await LoanService.updateLoan(updatedLoan);
+        setSelectedLoan(updatedLoan);
+        alert("Loan rejected: the applicant has a bad credit history.");
+      } catch (error) {
+        console.error("Error updating loan:", error);
+        alert("Error updating loan: " + error.message);
+      }
+      fetchPendingLoans();
     }
+
   };
 
   // R3 
   const handleEvaluateR3 = async () => {
     try {
       const result = await LoanService.evaluateR3(yearsOfEmployment, isSelfEmployed);
-      
-      if (result) {
-        setEvaluationResult("Employment stability is acceptable.");
-        const updatedLoan = { ...selectedLoan, solicitudeState: "R4" }; // Cambia a R4 si es aceptado
-        await LoanService.updateLoan(updatedLoan);
-        setSelectedLoan(updatedLoan);
-        alert("Loan accepted and updated to R4.");
-      } else {
-        setEvaluationResult("Employment stability is not acceptable.");
-        const updatedLoan = { ...selectedLoan, solicitudeState: "E7: The applicant has not met the R3 requirement regarding employment stability." };
-        await LoanService.updateLoan(updatedLoan);
-        setSelectedLoan(updatedLoan);
-        alert("Loan rejected.");
-      }
   
-      fetchPendingLoans(); // Actualiza la lista de préstamos pendientes
+      const updatedLoan = result
+        ? { ...selectedLoan, evaluationState: "R4" }
+        : { ...selectedLoan, solicitudeState: "E7: The applicant has not met the R3 requirement regarding employment stability."
+          };
+  
+      try {
+        await LoanService.updateLoan(updatedLoan);
+        setSelectedLoan(updatedLoan);
+        alert(result ? "Loan accepted and updated to R4." : "Loan rejected.");
+      } catch (error) {
+        console.error("Error updating loan:", error);
+        alert("Error updating loan: " + error.message);
+      }
+      fetchPendingLoans();
     } catch (error) {
       console.error("Error evaluating R3:", error);
-      setEvaluationResult("Error during evaluation.");
+      alert("Error during evaluation: " + error.message);
     }
   };
   
@@ -110,68 +146,101 @@ const LoanEvaluation = () => {
   const handleEvaluateR4 = async () => {
     try {
       const result = await LoanService.evaluateR4(totalDebts, monthlyIncome);
-      if(result){
-        const updatedLoan = { ...selectedLoan, solicitudeState: "R5" };
+      const updatedLoan = result
+        ? { ...selectedLoan, evaluationState: "R5" }
+        : { ...selectedLoan, solicitudeState: "E7: The applicant has not met the R4 requirement regarding total debt to income ratio."
+          };
+
+      try {
         await LoanService.updateLoan(updatedLoan);
         setSelectedLoan(updatedLoan);
-        alert("Loan accepted and updated to R5.");
-      } else {
-        const updatedLoan = { ...selectedLoan, solicitudeState: "E7: The applicant has not met the R4 requirement regarding total debt to income ratio." };
-        await LoanService.updateLoan(updatedLoan);
-        setSelectedLoan(updatedLoan);
-        alert("Loan rejected.");
+        alert(result ? "Loan accepted and updated to R5." : "Loan rejected.");
+      } catch (error) {
+        console.error("Error updating loan:", error);
+        alert("Error updating loan: " + error.message);
       }
-
+      fetchPendingLoans();
     } catch (error) {
-      console.error('Error evaluating R4:', error);
-      setEvaluationResult("Error during evaluation.");
-    }
-  };
-
-  // R5 Component
-  const handleEvaluateR5 = async () => {
-    try {
-      const result = await LoanService.evaluateR5(selectedLoan.financing_amount, propertyValue, selectedLoan.type);
-      const updatedLoan = { 
-        ...selectedLoan, 
-        solicitudeState: result 
-          ? "R6" 
-          : "E7: The applicant has not met the R5 requirement regarding the property value."
-      };
-      
-      await LoanService.updateLoan(updatedLoan);
-      setSelectedLoan(updatedLoan);
-      
-      alert(result ? "Loan accepted and updated to R6." : "Loan rejected.");
-    } catch (error) {
-      console.error('Error evaluating R5:', error);
-      setEvaluationResult("Error during evaluation.");
+      console.error("Error evaluating R4:", error);
+      alert("Error during evaluation: " + error.message);
     }
   };
   
+  // R5 Component
+  const handleEvaluateR5 = async () => {
+    try {
+      const result = await LoanService.evaluateR5( selectedLoan.financing_amount, propertyValue, selectedLoan.type );
+      const updatedLoan = result
+        ? { ...selectedLoan, evaluationState: "R6" }
+        : {...selectedLoan, solicitudeState: "E7: The applicant has not met the R5 requirement regarding the property value."};
+
+      try {
+        await LoanService.updateLoan(updatedLoan);
+        setSelectedLoan(updatedLoan);
+        alert(result ? "Loan accepted and updated to R6." : "Loan rejected.");
+      } catch (error) {
+        console.error("Error updating loan:", error);
+        alert("Error updating loan: " + error.message);
+      }
+  
+      fetchPendingLoans();
+    } catch (error) {
+      console.error("Error evaluating R5:", error);
+      alert("Error during evaluation: " + error.message);
+    }
+  };
+  
+  // R6 Component
   const handleEvaluateR6 = async () => {
     try {
       const result = await LoanService.evaluateR6(age, selectedLoan.term);
-      const updatedLoan = {
-        ...selectedLoan,
-        solicitudeState: result
-          ? "R7"
-          : "E7: The applicant has not met the R6 requirement regarding the age limit."
-      };
-
-      await LoanService.updateLoan(updatedLoan);
-      setSelectedLoan(updatedLoan);
-      alert(result ? "Loan accepted and updated to R7." : "Loan rejected.");
+      const updatedLoan = result ? { ...selectedLoan, evaluationState: "R7" }   
+                                 : { ...selectedLoan, solicitudeState:
+              "E7: The applicant has not met the R6 requirement regarding the age limit."
+          };
+      try {
+        await LoanService.updateLoan(updatedLoan);
+        setSelectedLoan(updatedLoan);
+        alert(result ? "Loan accepted and updated to R7." : "Loan rejected.");
+      } catch (error) {
+        console.error("Error updating loan:", error);
+        alert("Error updating loan: " + error.message);
+      }
+      fetchPendingLoans();
     } catch (error) {
-      console.error('Error evaluating R6:', error);
+      console.error("Error evaluating R6:", error);
+      alert("Error during evaluation: " + error.message);
+    }
+  };
+  
+  // R7 Component
+  const handleEvaluateR7 = async () => {
+    try{
+      const updatedLoan = await LoanService.evaluateR7(selectedLoan, numberAproved);
+      setSelectedLoan(updatedLoan);
+      alert("Loan state updated.");
+      fetchPendingLoans();
+    }catch (error) {
+      console.error('Error evaluating R7:', error);
       setEvaluationResult("Error during evaluation.");
     }
   };
 
-
+  
   const renderSection = (state) => {
+    // This is the case when the loan has already been declined and we want to show the reason
+    if(selectedLoan.solicitudeState !== "E3" && selectedLoan.solicitudeState !== "E4"){
+      return <div>
+              <h2>The loan application has already been declined</h2> 
+              <p>Reason: {selectedLoan.solicitudeState}</p> 
+            </div>;
+    }
+    if(selectedLoan.solicitudeState === "E4"){
+      return <Navigate to="/home" />;
+    }
+
     switch (state) {
-      case "Initial Revision":
+      case "R1":
         return (
           <R1 
             monthlyQuota={monthlyQuota} 
@@ -213,7 +282,7 @@ const LoanEvaluation = () => {
             evaluationResult={evaluationResult}
           />
         );
-        case "R5":
+      case "R5":
           return (
             <R5 
               propertyValue={propertyValue}
@@ -230,12 +299,17 @@ const LoanEvaluation = () => {
             />
          );
       case "R7":
-        return <Notification />;
+        return (
+            <R7 
+              numberAproved={numberAproved}
+              setnumberAproved={setnumberAproved}
+              onEvaluateR7={handleEvaluateR7}
+            />
+        );
       default:
         return <p>Unknown state</p>;
     }
   };
-
   return (
     <div>
       <h1>Loan Evaluation</h1>
@@ -247,7 +321,8 @@ const LoanEvaluation = () => {
                 <tr>
                   <th>RUT</th>
                   <th>Loan Type</th>
-                  <th>Status</th>
+                  <th>Evaluation State</th>
+                  <th>Solicitude State</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -256,6 +331,7 @@ const LoanEvaluation = () => {
                   <tr key={loan.id}>
                     <td>{loan.rut}</td>
                     <td>{getLoanType(loan.type)}</td>
+                    <td>{loan.evaluationState}</td>
                     <td>{loan.solicitudeState}</td>
                     <td>
                       <button onClick={() => handleLoanSelect(loan)}>Evaluate</button>
@@ -274,7 +350,7 @@ const LoanEvaluation = () => {
             Back to Loan Table
           </button>
           <h2>Evaluating Loan:</h2>
-          {renderSection(selectedLoan.solicitudeState)}
+          {renderSection(selectedLoan.evaluationState)}
         </div>
       )}
     </div>
@@ -402,8 +478,6 @@ const R5 = ({ propertyValue,  setPropertyValue,  onEvaluateR5 }) => (
   </div>
 );
 
-
-
 const R6 = ({age, setAgeValue, onEvaluateR6}) => (
   <div>
     <h2>R6. Age limit </h2>
@@ -424,10 +498,78 @@ const R6 = ({age, setAgeValue, onEvaluateR6}) => (
     </div>
 );
 
+const R7 = ({ numberAproved, setnumberAproved, onEvaluateR7 }) => (
+  <div>
+    <h2>R7. Saving Capacity</h2>
+    <div>
+      <label>
+        R71: Minimum Required Balance - 10% of the loan amount
+        <input
+          type="checkbox"
+          onChange={(e) =>
+            setnumberAproved((prev) => (e.target.checked ? prev + 1 : prev - 1))
+          }
+        />
+      </label>
+    </div>
 
+    <div>
+      <label>
+        R72: Consistent Saving History - 12 months without significant withdrawals
+        <input
+          type="checkbox"
+          onChange={(e) =>
+            setnumberAproved((prev) => (e.target.checked ? prev + 1 : prev - 1))
+          }
+        />
+        
+      </label>
+    </div>
 
+    <div>
+      <label>
+        R73: Periodic Deposits - At least 5% of monthly income
+        <input
+          type="checkbox"
+          onChange={(e) =>
+            setnumberAproved((prev) => (e.target.checked ? prev + 1 : prev - 1))
+          }
+        />
+      </label>
+    </div>
 
-const Notification = () => <p>Notification: Informing the applicant...</p>;
+    <div>
+      <label>
+        R74: Balance-to-Age Relationship - 10% or 20% depending on account age
+        <input
+          type="checkbox"
+          onChange={(e) =>
+            setnumberAproved((prev) => (e.target.checked ? prev + 1 : prev - 1))
+          }
+        />
+        
+      </label>
+    </div>
+
+    <div>
+      <label>
+      R75: Recent Withdrawals - Less than 30% in the last 6 months
+        <input
+          type="checkbox"
+          onChange={(e) =>
+            setnumberAproved((prev) => (e.target.checked ? prev + 1 : prev - 1))
+          }
+        />
+      </label>
+    </div>
+
+    <div>
+      <p>Number of Approved Points: {numberAproved}</p>
+      <button onClick={onEvaluateR7}>Evaluate R7</button>
+    </div>
+  </div>
+);
+
 
 const getLoanType = (type) => {
   switch (type) {

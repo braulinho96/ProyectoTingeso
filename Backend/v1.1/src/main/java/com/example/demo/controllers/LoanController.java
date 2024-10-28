@@ -55,9 +55,7 @@ public class LoanController {
 
     @PostMapping("/evaluate/R1")
     public ResponseEntity<Boolean> R1evaluateCuoteIncome(@RequestParam int quota, @RequestParam int income) {
-        // Llamada al servicio para evaluar la relación cuota-ingreso
         boolean result = loanService.R1cuoteIncomeRelation(quota, income);
-        // Retorna el resultado directamente como un booleano
         return ResponseEntity.ok(result);
     }
 
@@ -93,6 +91,14 @@ public class LoanController {
         boolean isApproved = loanService.R6ageLimit(age, term);
         return ResponseEntity.ok(isApproved);
     }
+
+    @PostMapping("/evaluate/R7")
+    public ResponseEntity<LoanEntity> R7SavingCapacity(@RequestBody LoanEntity loanSolicitude, @RequestParam int numberApproved){
+        LoanEntity updatedLoan = loanService.R7SavingCapacity(loanSolicitude, numberApproved );
+        return ResponseEntity.ok(updatedLoan);
+    }
+
+
 
 
 
