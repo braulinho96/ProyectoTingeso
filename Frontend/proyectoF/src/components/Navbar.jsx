@@ -19,7 +19,6 @@ const Navbar = ({ isAuthenticated, handleLogout, user }) => (
     <Link to="/loan-simulation" style={{ marginBottom: '10px' }}>Loan Simulation</Link>
     <Link to="/loan-solicitude" style={{ marginBottom: '10px' }}>Loan Solicitude</Link>
     
-
     {user && Number(user.id_rol) == 1 && (
       <Link to="/loan-evaluation" style={{ marginBottom: '10px' }}>Loan Evaluation</Link>
     )}

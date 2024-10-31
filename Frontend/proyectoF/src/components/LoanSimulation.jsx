@@ -70,47 +70,22 @@ const LoanSimulation = () => {
       return;
     }
 
-
-    // Section of code to validate the input values
-    const numericPropertyValue = parseInt(propertyValue);
-    if (isNaN(numericPropertyValue) || numericPropertyValue <= 0) {
-      alert('The property value must be greater than 0.');
-      return;
-    }
-
-    const numericAmount = parseInt(amount);
-    if (isNaN(numericAmount) || numericAmount <= 0) {
-      alert('The loan amount must be greater than 0.');
-      return;
-    }
-
-    const maxLoanAmount = (selectedLoan.maxPercentage / 100) * numericPropertyValue;
-    console.log(`Max Loan Amount: ${maxLoanAmount}`); // Para depurar
+    // Validate the maximum loan amount based on the selected loan type 
+    const maxLoanAmount = (selectedLoan.maxPercentage / 100) * propertyValue;
+    console.log(`Max Loan Amount: ${maxLoanAmount}`);
   
-    if (numericAmount > maxLoanAmount) {
-      console.log(`maxLoanAmount: ${maxLoanAmount}$ monto solicitado:  ${numericAmount}$ `); // Para depurar
+    if (amount > maxLoanAmount) {
+      console.log(`maxLoanAmount: ${maxLoanAmount}$ monto solicitado:  ${amount}$ `); 
       alert(`The loan amount cannot exceed ${selectedLoan.maxPercentage} of the properly value. Max allowed ${maxLoanAmount}.`)
       return; 
-    }
-
-    const numericTerm = parseInt(term);
-    if (numericTerm < 0 || numericTerm > selectedLoan.maxTerm) {
-      alert(`The term must be between 0 and ${selectedLoan.maxTerm} years.`);
-      return;
-    }
-
-    const numericInterestRate = parseFloat(interestRate);
-    if (isNaN(numericInterestRate) || numericInterestRate < selectedLoan.minInterestRate || numericInterestRate > selectedLoan.maxInterestRate) {
-      alert(`The interest rate must be between ${selectedLoan.minInterestRate}% and ${selectedLoan.maxInterestRate}%.`);
-      return;
     }
 
     // Call the service to calculate the monthly payment
     try {
       const payment = await LoanService.calculateMonthlyPayment(
-        numericAmount,
-        numericInterestRate,
-        numericTerm
+        amount,
+        interestRate,
+        term
       );
       setMonthlyPayment(payment);
     } catch (error) {
@@ -130,7 +105,6 @@ const LoanSimulation = () => {
     <div style={{ textAlign: 'center' }}>
       <h2>Loan Simulation</h2>
 
-      {/* Loan type selection */}
       <select onChange={handleLoanSelect} defaultValue="">
         <option value="" disabled>Select loan type</option>
         {loanOptions.map((loan) => (
@@ -164,7 +138,8 @@ const LoanSimulation = () => {
               placeholder="Property Value"
               value={propertyValue}
               onChange={(e) => setPropertyValue(e.target.value)}
-              min="1"
+              min={1}
+ 
               required
               style={{ marginBottom: '10px' }}
             />
@@ -173,7 +148,7 @@ const LoanSimulation = () => {
               placeholder="Loan amount"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              min="1"
+              min={1}
               required
               style={{ marginBottom: '10px' }}
             />

@@ -20,13 +20,9 @@ public class UserService {
         if (user.getId_rol() != 2) {
             throw new IllegalArgumentException("You are not allowed to create an executive or admin user.");
         }
-
-        // Verificar si el RUT ya existe
         if (userRepository.findByRut(user.getRut()) != null) {
-            throw new IllegalArgumentException("El RUT ya está registrado en el sistema.");
+            throw new IllegalArgumentException("The user is already in the database");
         }
-
-        // Save the user in the database
         return userRepository.save(user);
     }
 
@@ -42,11 +38,8 @@ public class UserService {
     public UserEntity validateUserLogin(String rut, String password) {
         UserEntity user = getUserByRut(rut);
         if (user != null && user.isSolicitude_state() && password.equals(user.getPassword())) {
-            return user; // Retorna el objeto si las credenciales son correctas
+            return user;
         }
-        return null; // Retorna null si no son válidas
+        return null;
     }
-
-
-
 }

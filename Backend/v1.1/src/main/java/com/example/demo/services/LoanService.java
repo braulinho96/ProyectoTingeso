@@ -33,7 +33,7 @@ public class LoanService {
 
     // P4. For the solicitude revision
     public List<LoanEntity> getPendingLoans(){
-        return loanRepository.findBySolicitudeStateNot("Approved");
+        return loanRepository.findBySolicitudeStateNot("E8");
     }
 
     // R1.
@@ -42,7 +42,7 @@ public class LoanService {
         if (quota <= 0 || income <= 0) {
             return false;
         }
-        // Convertimos quota a float para obtener los decimales de la división
+        // we convert the data type to float, so we can divide them
         float relation = (float) quota / income;
         return relation <= 0.35;
     }
@@ -62,23 +62,18 @@ public class LoanService {
     }
 
     public boolean R5maxAmount(int loanAmount, int propertyValue, int propertyType) {
-        double maxAllowedLoan;
-        switch (propertyType) {
-            case 1:  // Primera Vivienda
-                maxAllowedLoan = propertyValue * 0.8;
-                break;
-            case 2:  // Segunda Vivienda
-                maxAllowedLoan = propertyValue * 0.7;
-                break;
-            case 3:  // Propiedades Comerciales
-                maxAllowedLoan = propertyValue * 0.6;
-                break;
-            case 4:  // Remodelación
-                maxAllowedLoan = propertyValue * 0.5;
-                break;
-            default:  // Tipo de propiedad no válido
-                throw new IllegalArgumentException("Tipo de propiedad inválido");
-        }
+        double maxAllowedLoan = switch (propertyType) {
+            case 1 ->  // First Home
+                    propertyValue * 0.8;
+            case 2 ->  // Second Home
+                    propertyValue * 0.7;
+            case 3 ->  // Propiedades Comerciales
+                    propertyValue * 0.6;
+            case 4 ->  // Remodelación
+                    propertyValue * 0.5;
+            default ->  // Tipo de propiedad no válido
+                    throw new IllegalArgumentException("Wrong type of property");
+        };
         return loanAmount <= maxAllowedLoan;
     }
     // R6
@@ -93,7 +88,7 @@ public class LoanService {
         } else if(numberApproved == 3 | numberApproved == 4){
             evaluatedLoan.setEvaluationState("R8"); // To indicate that we need an additional revision
         } else{
-            evaluatedLoan.setSolicitudeState("E7: The applicant has not met the R7 requirement regarding Saving capacity.");
+            evaluatedLoan.setSolicitudeState("E7");
         }
         return loanRepository.save(evaluatedLoan);
     }

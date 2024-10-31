@@ -68,10 +68,15 @@ const postLoanSolicitude = ({ user }) => {
   const [interestRate, setInterestRate] = useState('');
   const [files, setFiles] = useState({});  
 
-  const handleFileChange = (e, index) => { 
-    const newFiles = { ...files, [index]: e.target.files[0] };
-    setFiles(newFiles);
-  };
+  const handleFileChange = (e, index) => {
+    const file = e.target.files[0];
+    if (file) {
+        console.log(`Selected file: ${file.name}, size: ${file.size}`);
+        const newFiles = { ...files, [index]: file };
+        setFiles(newFiles);
+    }
+};
+
 
   const navigate = useNavigate(); 
 
@@ -108,7 +113,7 @@ const postLoanSolicitude = ({ user }) => {
         evaluationState: 'R1',
         solicitudeState: 'E3',
         type: selectedLoan.typeNumber,
-        rut: user.rut,  // Asegúrate de que user tenga el RUT REVISARRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRr
+        rut: user.rut,  
       });
 
       const loanId = loanResponse.id; // Get the idLoan created to relate with the uploading documents

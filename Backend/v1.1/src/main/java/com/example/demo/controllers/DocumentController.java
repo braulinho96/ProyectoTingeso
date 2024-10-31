@@ -21,23 +21,25 @@ public class DocumentController {
     public ResponseEntity<DocumentEntity> uploadDocument(@RequestParam("file") MultipartFile file,
                                                          @RequestParam("name") String name,
                                                          @RequestParam("idLoan") Long idLoan){
+
         if(file.isEmpty()){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // bad_request to indicate that the file param is empty
         }
 
-        try{
-
-            // new Document Entity, we set the name of
+        try {
             DocumentEntity newDocument = new DocumentEntity();
-            newDocument.setIdLoan(idLoan);
-            newDocument.setName(name);                          // Saves the name of the file
-            newDocument.setContent(file.getBytes());            // This converts the file to a byte array
-            DocumentEntity saveDocument = documentService.saveDocument(newDocument);
-            return ResponseEntity.status(HttpStatus.CREATED).body(saveDocument); // 201 to say that was created
 
+            newDocument.setIdLoan(idLoan);
+            newDocument.setName(name);
+            newDocument.setContent(file.getBytes()); // Aquí debes asegurarte que se guarde correctamente
+            DocumentEntity savedDocument = documentService.saveDocument(newDocument);
+
+            System.out.println("Document content size: " + newDocument.getContent().length);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedDocument);
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null); // 500 error mean Internal Server error
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
+
     }
 
     // Return list of the documents assossiated with the loan

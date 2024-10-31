@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import LoanService from "../services/loan.service";
 import { Navigate } from "react-router-dom";
+import DocumentsService from "../services/documents.service";
 
 const LoanEvaluation = () => {
   const [pendingLoans, setPendingLoans] = useState([]);
@@ -15,6 +16,8 @@ const LoanEvaluation = () => {
   const [propertyValue, setPropertyValue] = useState(0);
   const [age, setAgeValue] = useState(0);
   const [numberAproved, setnumberAproved] = useState(0);
+  const [documents, setDocuments] = useState([]);
+
                     
   useEffect(() => {
     fetchPendingLoans();
@@ -29,11 +32,45 @@ const LoanEvaluation = () => {
     }
   };
 
-  const handleLoanSelect = (loan) => {
+
+  const handleLoanSelect = async (loan) => {
     setSelectedLoan(loan);
     console.log(loan);
+    try {
+      const loanDocuments = await DocumentsService.getLoanDocuments(loan.id);
+      setDocuments(loanDocuments);
+    } catch (error) {
+      console.error("Error fetching loan documents:", error);
+    }
   };
+  // Documents section
+  const downloadDocument = (doc) => {
+    console.log("Documents received:", documents);
 
+    // Convertir el contenido base64 a un formato binario
+    const byteCharacters = atob(doc.content); // Decodifica el contenido base64
+    const byteNumbers = new Uint8Array(byteCharacters.length); // Crea un array de bytes
+
+    // Rellenar el array de bytes
+    for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+
+    // Crear un blob a partir del array de bytes
+    const blob = new Blob([byteNumbers], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    
+    // Crear un enlace para descargar el documento
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = doc.name; // Usa 'doc.name' como el nombre del archivo
+    document.body.appendChild(link); // Añadir el enlace al DOM
+    link.click(); // Hacer clic en el enlace para iniciar la descarga
+    document.body.removeChild(link); // Eliminar el enlace del DOM
+    URL.revokeObjectURL(url); // Liberar el objeto URL
+};
+
+  // Exit Evaluation
   const handleExitEvaluation = () => {
     setSelectedLoan(null);
     setMonthlyQuota(0);
@@ -58,7 +95,8 @@ const LoanEvaluation = () => {
         setEvaluationResult('An error occurred while evaluating the loan.');
     }
   };
-
+  
+  // R1 Update
   const handleEvaluateR1 = async (isAccepted) => {
     if(isAccepted){
       // Case when the loan is accepted
@@ -76,7 +114,7 @@ const LoanEvaluation = () => {
     } else {
       // Case when the loan is rejected
       try{
-        const updatedLoan = { ...selectedLoan, solicitudeState: "E7: The applicant has not met the R1 requirement regarding debt-to-income ratio." };
+        const updatedLoan = { ...selectedLoan, solicitudeState: "E7" };
         await LoanService.updateLoan(updatedLoan);
         setSelectedLoan(updatedLoan);
         alert("Loan rejected: relation between quota and income is too high.");
@@ -104,7 +142,7 @@ const LoanEvaluation = () => {
       fetchPendingLoans();
     } else{
       try{
-        const updatedLoan = { ...selectedLoan, solicitudeState: "E7: The applicant has not met the R2 requirement regarding credit history." };
+        const updatedLoan = { ...selectedLoan, solicitudeState: "E7" };
         await LoanService.updateLoan(updatedLoan);
         setSelectedLoan(updatedLoan);
         alert("Loan rejected: the applicant has a bad credit history.");
@@ -124,7 +162,7 @@ const LoanEvaluation = () => {
   
       const updatedLoan = result
         ? { ...selectedLoan, evaluationState: "R4" }
-        : { ...selectedLoan, solicitudeState: "E7: The applicant has not met the R3 requirement regarding employment stability."
+        : { ...selectedLoan, solicitudeState: "E7"
           };
   
       try {
@@ -148,7 +186,7 @@ const LoanEvaluation = () => {
       const result = await LoanService.evaluateR4(totalDebts, monthlyIncome);
       const updatedLoan = result
         ? { ...selectedLoan, evaluationState: "R5" }
-        : { ...selectedLoan, solicitudeState: "E7: The applicant has not met the R4 requirement regarding total debt to income ratio."
+        : { ...selectedLoan, solicitudeState: "E7"
           };
 
       try {
@@ -172,7 +210,7 @@ const LoanEvaluation = () => {
       const result = await LoanService.evaluateR5( selectedLoan.financing_amount, propertyValue, selectedLoan.type );
       const updatedLoan = result
         ? { ...selectedLoan, evaluationState: "R6" }
-        : {...selectedLoan, solicitudeState: "E7: The applicant has not met the R5 requirement regarding the property value."};
+        : {...selectedLoan, solicitudeState: "E7"};
 
       try {
         await LoanService.updateLoan(updatedLoan);
@@ -196,7 +234,7 @@ const LoanEvaluation = () => {
       const result = await LoanService.evaluateR6(age, selectedLoan.term);
       const updatedLoan = result ? { ...selectedLoan, evaluationState: "R7" }   
                                  : { ...selectedLoan, solicitudeState:
-              "E7: The applicant has not met the R6 requirement regarding the age limit."
+              "E7"
           };
       try {
         await LoanService.updateLoan(updatedLoan);
@@ -346,15 +384,44 @@ const LoanEvaluation = () => {
         </div>
       ) : (
         <div>
-          <button onClick={handleExitEvaluation} style={{ margin: "10px", marginTop: "10px", marginRight: "700px", position: "relative", top: "10px", left: "10px" }}>
+          <button
+            onClick={handleExitEvaluation}
+            style={{
+              margin: "10px",
+              marginTop: "10px",
+              marginRight: "700px",
+              position: "relative",
+              top: "10px",
+              left: "10px",
+            }}
+          >
             Back to Loan Table
           </button>
           <h2>Evaluating Loan:</h2>
           {renderSection(selectedLoan.evaluationState)}
+  
+          {/* Sección de documentos */}
+          <div className="documents-container">
+            <h3>Associated Documents</h3>
+            {documents.length > 0 ? (
+              <ul>
+                {documents.map((doc) => (
+                  <li key={doc.id}>
+                    {doc.name}{" "}
+                    <button onClick={() => downloadDocument(doc)}>
+                      Download
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No documents available for this loan.</p>
+            )}
+          </div>
         </div>
       )}
     </div>
-  );
+  );  
 };
 
 const R1 = ({ monthlyQuota, setMonthlyQuota, monthlyIncome, setMonthlyIncome, onEvaluateR1, evaluationResult, isLoanAccepted, onUpdateLoan }) => (

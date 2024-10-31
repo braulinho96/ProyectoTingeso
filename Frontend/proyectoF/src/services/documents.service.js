@@ -16,7 +16,17 @@ const DocumentsService = {
             console.error('Error when uploading the document:', error.response.data);
             throw error.response;
         }
-    }
+    },
+
+    getLoanDocuments: async (loanId) => {
+        try {
+            const response = await axios.get(`${API_URL}/${loanId}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching loan documents:', error.response.data);
+            throw error.response;
+        }
+    },
 };
 
 export default DocumentsService;

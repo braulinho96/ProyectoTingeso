@@ -11,15 +11,17 @@ const Login = ({ onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-  
+
     if (rut && password) {
       try {
         const response = await userService.login(rut, password);
         console.log('API Response:', response);
-  
+
         if (response) {
           onLogin(response);
-          navigate('/home'); 
+          console.log('Login successful');
+          console.log('User:', response);
+          navigate('/home');
         } else {
           setError('Invalid response data');
         }
@@ -29,8 +31,7 @@ const Login = ({ onLogin }) => {
       }
     }
   };
-  
-  
+
   return (
     <div className="login-page">
       <h1>Login</h1>
@@ -55,7 +56,7 @@ const Login = ({ onLogin }) => {
             required
           />
         </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>} {/* Muestra el mensaje de error */}
+        {error && <p style={{ color: 'red' }}>{error}</p>}
         <button type="submit">Sign in</button>
       </form>
       <p>
