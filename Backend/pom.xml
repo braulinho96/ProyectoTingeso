@@ -65,6 +65,7 @@
 	</dependencies>
 
 	<build>
+		<finalName>proyectoTingesoBackend</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
